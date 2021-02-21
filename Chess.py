@@ -173,7 +173,7 @@ def KnightMoves(i,j,func,lookingFor=[]):
 
 def MOVECHECKER(i,j,func,moveI,moveJ,valMoves=[],orig=False,depth=50,lookingFor=[],found=False,piece=None):
 	global board
-	##FUNC btw can be (str.isupper, which would be white, or str.lower for black)
+	##FUNC btw can be str.isupper, which would be white, or str.islower for black (just built up from fenstrings.)
 	##SO if func(board[i][j]); meaning if the piece which im checking the moves for is white and the board's position which im currently at is white too
 	##Then i want this to terminate obv.
 	if (i >= blocks or j>=blocks or i < 0 or j< 0 or func(board[i][j]) or depth <= 0 or found) and (not orig):
