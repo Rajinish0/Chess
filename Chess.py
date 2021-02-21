@@ -213,24 +213,6 @@ def KingInCheck(i,j,func):
 
 	return (c1 or c2 or c3 or c4)
 
-def FilterMoves(piece,func,curValidMoves):
-	global board
-	ValidMoves = copy.deepcopy(curValidMoves);
-	origBoard = copy.deepcopy(board)
-	for ind, each in enumerate(curValidMoves):
-		x,y = each
-		origPiece = board[x][y]
-		board[x][y] = piece;
-		if piece.lower() == 'k':
-			origKingPos = copy.copy(KINGSPOS[func])
-			KINGSPOS[func] = (x,y)
-		if KingInCheck(*KINGSPOS[func],func):
-			ValidMoves.remove(each);
-		board[x][y] = origPiece;
-		KINGSPOS[func] = origKingPos if piece.lower() == 'k' else KINGSPOS[func]
-	board = origBoard
-	return ValidMoves
-
 
 def parseFen(board,fen):
 	splits = fen.split('/')
