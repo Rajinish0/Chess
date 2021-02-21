@@ -270,8 +270,8 @@ def DrawCheck(pos):
 def LousyCheckMateAlgo(func):
 	piecesToCheck = ['q','r','n','b','p'];
 	newFunc = str.upper if func == str.isupper else str.lower				#IF KING Can't move anywhere, then check for all moves
-	piecesToCheck = [newFunc(each) for each in piecesToCheck];				#of all pieces of same color, if there possible moves are more then one
-	for i in range(len(board)):								#(1 would be there on position) that means checkmate could be avoided
+	piecesToCheck = [newFunc(each) for each in piecesToCheck];				#of all pieces of same color, if their possible moves are more then one
+	for i in range(len(board)):								#(1 move would be their own position) that means checkmate could be avoided
 		for j in range(len(board[0])):							#MOVECHECKER doesn't add the position in valid moves, which would cause the king
 			if board[i][j] in piecesToCheck:					#to be in check.
 				possibleMoves = MOVEFUNCS[board[i][j].lower()](i,j,func)
