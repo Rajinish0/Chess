@@ -173,17 +173,20 @@ def KnightMoves(i,j,func,lookingFor=[]):
 
 def MOVECHECKER(i,j,func,moveI,moveJ,valMoves=[],orig=False,depth=50,lookingFor=[],found=False,piece=None):
 	global board
+	##FUNC btw can be (str.isupper, which would be white, or str.lower for black)
+	##SO if func(board[i][j]); meaning if the piece which im checking the moves for is white and the board's position which im currently at is white too
+	##Then i want this to terminate obv.
 	if (i >= blocks or j>=blocks or i < 0 or j< 0 or func(board[i][j]) or depth <= 0 or found) and (not orig):
 		return valMoves if lookingFor == [] else (valMoves,found)
 
-	piece = copy.copy(board[i][j]) if (orig and (lookingFor == [] or board[i][j].lower() == 'p')) else piece
-	board[i][j] = '' if (piece is not None and orig) else board[i][j]
-
-	if not orig and piece is not None:
-		origPiece = copy.copy(board[i][j])	
-		board[i][j] = piece
-		if piece.lower() =='k':
-			origKingPos = copy.copy(KINGSPOS[func])
+	piece = copy.copy(board[i][j]) if (orig and (lookingFor == [] or board[i][j].lower() == 'p')) else piece 	##UH used lookingFor for pawn, had to use another condition.
+	board[i][j] = '' if (piece is not None and orig) else board[i][j]							## went crazy with if else commands
+													##Here's the gist of the code
+	if not orig and piece is not None:								##gets a moveI and moveJ, which come from different pieces
+		origPiece = copy.copy(board[i][j])				#Moves recursively in that moveI, moveJ until the conditions above are satisfied		
+		board[i][j] = piece						##Also works as a look up function; which I used for KingInCheck, really couldn't go through
+		if piece.lower() =='k':						#the trouble of writing another function for that. Takes care of not adding a position if that would
+			origKingPos = copy.copy(KINGSPOS[func])		#Make the king in check.
 			KINGSPOS[func] = (i,j)	
 		if not KingInCheck(*KINGSPOS[func],func):
 			valMoves.append((i,j))
@@ -200,8 +203,8 @@ def MOVECHECKER(i,j,func,moveI,moveJ,valMoves=[],orig=False,depth=50,lookingFor=
 
 
 def KingInCheck(i,j,func):
-	newFunc = str.lower if func == str.isupper else str.upper
-	pieces = ['q','b','r','p','k','n']
+	newFunc = str.lower if func == str.isupper else str.upper			#TO SEE IF KING IS IN CHECK, MOVE EVERY piece's moves from KING'S current position
+	pieces = ['q','b','r','p','k','n']						#And see if the piece whose move you are moving is on one of those blocks.
 	pieces = [newFunc(each) for each in pieces]
 
 	c1 = QueenMoves(i,j,func,lookingFor = pieces[:3])
@@ -266,11 +269,11 @@ def DrawCheck(pos):
 ## THE WORST ALGORITHM FOR CHECKING FOR CHECK MATE
 def LousyCheckMateAlgo(func):
 	piecesToCheck = ['q','r','n','b','p'];
-	newFunc = str.upper if func == str.isupper else str.lower
-	piecesToCheck = [newFunc(each) for each in piecesToCheck];
-	for i in range(len(board)):
-		for j in range(len(board[0])):
-			if board[i][j] in piecesToCheck:
+	newFunc = str.upper if func == str.isupper else str.lower				#IF KING Can't move anywhere, then check for all moves
+	piecesToCheck = [newFunc(each) for each in piecesToCheck];				#of all pieces of same color, if there possible moves are more then one
+	for i in range(len(board)):								#(1 would be there on position) that means checkmate could be avoided
+		for j in range(len(board[0])):							#MOVECHECKER doesn't add the position in valid moves, which would cause the king
+			if board[i][j] in piecesToCheck:					#to be in check.
 				possibleMoves = MOVEFUNCS[board[i][j].lower()](i,j,func)
 				if len(possibleMoves) > 1:
 					return False
