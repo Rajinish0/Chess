@@ -7,8 +7,6 @@ screen = pygame.display.set_mode((w,h))
 blocks = 8
 blockW = w//blocks
 blockH = h//blocks
-img = pygame.image.load('white\\R.png').convert_alpha()
-img = pygame.transform.scale(img,(100,100))
 
 def CheckEvent():
 	global run,pieceinHand,piece,curValidMoves,lastLegalPos,curfunc,funcs,KINGSPOS,InCheck,CheckMate
