@@ -8,7 +8,7 @@ blocks = 8
 blockW = w//blocks
 blockH = h//blocks
 
-def CheckEvent():
+def CheckEvent(functionality_disabled=False):
 	global run,pieceinHand,piece,curValidMoves,lastLegalPos,curfunc,funcs,KINGSPOS,InCheck,CheckMate
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
@@ -46,19 +46,12 @@ def CheckEvent():
 					if board[i][j].lower() == 'k':															### UPDAATE KING's Position
 						KINGSPOS[funcs[not curfunc]] = (i,j) if not (i,j) == lastLegalPos else KINGSPOS[funcs[not curfunc]]
 
-					lastLegalPos = None
+					lastLegalPos = None					
 
-					if KingInCheck(*KINGSPOS[funcs[curfunc]],funcs[curfunc]):
-						InCheck = KINGSPOS[funcs[curfunc]]
-						kingsMoves = MOVEFUNCS['k'](*KINGSPOS[funcs[curfunc]],funcs[curfunc])
-						if len(kingsMoves) < 2:
-							print('POTENTIAL CHECKMATE')
-							CheckMate = LousyCheckMateAlgo(funcs[curfunc]);
-							winner = players[funcs[not curfunc]] if CheckMate else None;						
-							print(winner);
-							# LOUSCHECKMATE(funcs[curfunc]);
-					else:
-						InCheck = None
+					CheckForPawnPromotion(i,j,funcs[not curfunc]);
+
+					CheckForCheckMate();
+
 
 
 	keys = pygame.key.get_pressed()
@@ -68,6 +61,56 @@ def GetBlockFromMouse():
 	posx,posy = pygame.mouse.get_pos()
 	j,i= posx//blockW,posy//blockH
 	return j,i
+
+
+def CheckForPawnPromotion(i,j,func):
+	global imgs,board,CheckMate
+	if board[i][j].lower() == 'p' and (i==0 or i == 7):
+		board[i][j] = 'p' if func == str.islower else 'P';
+		screen.fill((0,0,0))
+		drawRects()
+		drawPieces(board,imgs)
+		DrawCheck((i,j),(255,255,0))
+		pygame.display.update()
+		CheckMate= True;						## JUST TO DISABLE ANY MOUSE CLICKS DURING PAWN PROMOTION PHASE.
+		PawnPromotion(i,j,func);
+		CheckMate= False;
+
+def CheckForCheckMate():
+	global curfunc,funcs,CheckMate,InCheck,MOVEFUNCS
+	if KingInCheck(*KINGSPOS[funcs[curfunc]],funcs[curfunc]):
+		InCheck = KINGSPOS[funcs[curfunc]]
+		kingsMoves = MOVEFUNCS['k'](*KINGSPOS[funcs[curfunc]],funcs[curfunc])
+		if len(kingsMoves) < 2:
+			print('POTENTIAL CHECKMATE')
+			CheckMate = LousyCheckMateAlgo(funcs[curfunc]);
+			winner = players[funcs[not curfunc]] if CheckMate else None;						
+			print(winner);
+	else:
+		InCheck = None
+
+
+def PawnPromotion(i,j,func):
+	newFunc = str.lower if func == str.islower else str.upper
+
+	while True:
+		keys = pygame.key.get_pressed()
+		if keys[pygame.K_q]:
+			board[i][j] = newFunc('q')
+			break
+		elif keys[pygame.K_r]:
+			board[i][j] = newFunc('r')
+			break
+		elif keys[pygame.K_n]:
+			board[i][j] = newFunc('n')
+			break
+		elif keys[pygame.K_b]:
+			board[i][j] = newFunc('b')
+			break
+		elif keys[pygame.K_p]:
+			board[i][j] = newFunc('p')
+		CheckEvent()
+
 
 def movePiece(d,piece):
 	posx,posy = pygame.mouse.get_pos()
