@@ -70,7 +70,7 @@ def CheckForPawnPromotion(i,j,func):
 		screen.fill((0,0,0))
 		drawRects()
 		drawPieces(board,imgs)
-		DrawCheck((i,j),(255,255,0))
+		DrawCheck((i,j),(255,255,0))					## BAD FUNCTION NAMING; THIS JUST DRAWS A RECT AT A GIVEN POSITION
 		pygame.display.update()
 		CheckMate= True;						## JUST TO DISABLE ANY MOUSE CLICKS DURING PAWN PROMOTION PHASE.
 		PawnPromotion(i,j,func);
@@ -109,6 +109,7 @@ def PawnPromotion(i,j,func):
 			break
 		elif keys[pygame.K_p]:
 			board[i][j] = newFunc('p')
+			break
 		CheckEvent()
 
 
