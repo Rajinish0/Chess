@@ -44,7 +44,8 @@ def CheckEvent(functionality_disabled=False):
 					
 					if board[i][j].lower() == 'k':															### UPDAATE KING's Position
 						KINGSPOS[funcs[not curfunc]] = (i,j) if not (i,j) == lastLegalPos else KINGSPOS[funcs[not curfunc]]
-
+						
+					ResetPawnHistory()
 					CheckPawnHistory(i,j,curfunc)
 					CheckEnPassantKill(i,j,curfunc)
 
@@ -69,13 +70,12 @@ def GetBlockFromMouse():
 So if a pawn is at starting position and it moves 2 steps, i record that pawn in a dictionary
 then when the other pawn moves and the pawn to its left or right has moved 2 steps it has the right to kill it.
 the move is added to EnPassantMoves_. The rules for enpassant being applicable only once for every pawn was quite simple to implement
-the record in dictionary gets changed to 0 every time a pawn moves from its starting position and EnPassantMoves_ gets emptied every time a move is played.
+the record in dictionary gets changed to 0 and EnPassantMoves_ gets emptied every time a move is played.
 '''
 
 def CheckPawnHistory(i,j,curfunc):
 	global lastLegalPos, funcs
 	if board[i][j].lower() == 'p' and lastLegalPos != (i,j) and (lastLegalPos[0] == 1 or lastLegalPos[0] == 6):
-		ResetPawnHistory()
 		UpdatePawnHistory(lastLegalPos,(i,j),funcs[not curfunc]);
 
 def CheckEnPassantKill(i,j,curfunc):
