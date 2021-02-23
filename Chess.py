@@ -69,7 +69,7 @@ def GetBlockFromMouse():
 '''
 So if a pawn is at starting position and it moves 2 steps, i record that pawn in a dictionary
 then when the other pawn moves and the pawn to its left or right has moved 2 steps it has the right to kill it.
-the move is added to EnPassantMoves_. The rules for enpassant being applicable only once for every pawn was quite simple to implement
+the move is added to EnPassantMoves_. The rule for enpassant being applicable only once for every pawn implementation:
 the record in dictionary gets changed to 0 and EnPassantMoves_ gets emptied every time a move is played.
 '''
 
@@ -265,7 +265,7 @@ gets a moveI and moveJ, which come from different pieces
 Moves recursively in that moveI, moveJ until the conditions above are satisfied		
 Also works as a look up function; which I used for KingInCheck, really couldn't go through
 the trouble of writing another function for that. Takes care of not adding a position if that would
-Make the king in check.'''
+make the king in check.'''
 def MOVECHECKER(i,j,func,moveI,moveJ,valMoves=[],orig=False,depth=50,lookingFor=[],found=False,piece=None):
 	##FUNC btw can be str.isupper, which would be white, or str.islower for black (just built up from fenstrings.)
 	##SO if func(board[i][j]); meaning if the piece which im checking the moves for is white and the board's position which im currently at is white too
@@ -378,7 +378,7 @@ def DrawCheck(pos,col=None):
 
 '''
 IF KING Can't move anywhere, then check for all moves
-of all pieces of same color, if their possible moves are more then one
+of all pieces of same color, if their possible moves are more than one
 (1 move would be their own position) that means checkmate could be avoided
 MOVECHECKER doesn't add the position in valid moves, which would cause the king
 to be in check.
