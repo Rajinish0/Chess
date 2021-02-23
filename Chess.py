@@ -8,7 +8,7 @@ blocks = 8
 blockW = w//blocks
 blockH = h//blocks
 
-def CheckEvent(functionality_disabled=False):
+def CheckEvent():
 	global run,pieceinHand,piece,curValidMoves,lastLegalPos,curfunc,funcs,KINGSPOS,InCheck,CheckMate,EnPassantMoves_
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
