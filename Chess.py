@@ -129,9 +129,6 @@ def PawnPromotion(i,j,func):
 		elif keys[pygame.K_b]:
 			board[i][j] = newFunc('b')
 			break
-		elif keys[pygame.K_p]:
-			board[i][j] = newFunc('p')
-			break
 		CheckEvent()
 
 def movePiece(d,piece):
