@@ -23,8 +23,8 @@ def CheckEvent():
 				lastLegalPos = (i,j)
 				if not piece == '' and funcs[curfunc](piece):
 					pieceinHand = True
-					curValidMoves = MOVEFUNCS[piece.lower()](i,j,funcs[curfunc])
 					board[i][j] = ''
+					curValidMoves = MOVEFUNCS[piece.lower()](i,j,funcs[curfunc],piece=piece)
 
 
 			if event.type == pygame.MOUSEBUTTONUP:
@@ -102,7 +102,8 @@ def CheckForCheckMate():
 	global curfunc,funcs,CheckMate,InCheck,MOVEFUNCS
 	if KingInCheck(*KINGSPOS[funcs[curfunc]],funcs[curfunc]):
 		InCheck = KINGSPOS[funcs[curfunc]]
-		kingsMoves = MOVEFUNCS['k'](*KINGSPOS[funcs[curfunc]],funcs[curfunc])
+		newFunc = str.lower if funcs[curfunc] == str.islower else str.upper
+		kingsMoves = MOVEFUNCS['k'](*KINGSPOS[funcs[curfunc]],funcs[curfunc],piece=newFunc('k'))
 		if len(kingsMoves) < 2:
 			print('POTENTIAL CHECKMATE')
 			CheckMate = LousyCheckMateAlgo(funcs[curfunc]);
@@ -156,34 +157,34 @@ def drawRects():
 		curColor = not curColor	
 	return board
 
-def RookeMoves(i,j,func,depth=50,lookingFor = []):
+def RookeMoves(i,j,func,depth=50,lookingFor = [],piece=None):
 	global board,blocks
 	validMoves = [(i,j)]
-	U = MOVECHECKER(i,j,func,1,0,orig=1,depth=depth,valMoves=[],lookingFor=lookingFor)
-	D = MOVECHECKER(i,j,func,-1,0,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor)
-	R = MOVECHECKER(i,j,func,0,1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor)
-	L = MOVECHECKER(i,j,func,0,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor)
+	U = MOVECHECKER(i,j,func,1,0,orig=1,depth=depth,valMoves=[],lookingFor=lookingFor,piece=piece)
+	D = MOVECHECKER(i,j,func,-1,0,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
+	R = MOVECHECKER(i,j,func,0,1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
+	L = MOVECHECKER(i,j,func,0,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
 	validMoves = validMoves + U+D+R+L if lookingFor == [] else (U[1] or D[1] or R[1] or L[1])
 	return validMoves
 
-def BishopMoves(i,j,func,depth=50,lookingFor=[]):
+def BishopMoves(i,j,func,depth=50,lookingFor=[],piece=None):
 	global board,blocks
 	validMoves= [(i,j)]
-	U = MOVECHECKER(i,j,func,1,1,orig=1,depth=depth,valMoves=[],lookingFor=lookingFor)
-	D = MOVECHECKER(i,j,func,-1,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor)
-	UR = MOVECHECKER(i,j,func,1,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor)
-	DR = MOVECHECKER(i,j,func,-1,1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor)
+	U = MOVECHECKER(i,j,func,1,1,orig=1,depth=depth,valMoves=[],lookingFor=lookingFor,piece=piece)
+	D = MOVECHECKER(i,j,func,-1,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
+	UR = MOVECHECKER(i,j,func,1,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
+	DR = MOVECHECKER(i,j,func,-1,1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
 	validMoves = validMoves + U+D+UR+DR if lookingFor ==[] else (U[1] or D[1] or UR[1] or DR[1])
 	return validMoves
 
-def PawnMoves(i,j,func,lookingFor=[]):
+def PawnMoves(i,j,func,lookingFor=[],piece=None):
 	validMoves = [(i,j)]
 	depth = 3 if (i == 1 or i == 6) else 2
 	LOOKINGFOR = ['q','p','r','k','n','b']
 	if func == str.islower:
-		MOVE = MOVECHECKER(i,j,func,1,0,orig=1,depth = depth,valMoves=[],lookingFor=[])
+		MOVE = MOVECHECKER(i,j,func,1,0,orig=1,depth = depth,valMoves=[],lookingFor=[],piece=piece)
 	else:
-		MOVE = MOVECHECKER(i,j,func,-1,0,orig=1,depth = depth,valMoves=[],lookingFor=[])
+		MOVE = MOVECHECKER(i,j,func,-1,0,orig=1,depth = depth,valMoves=[],lookingFor=[],piece=piece)
 
 	for ind, each in enumerate(MOVE):
 		(vali,valj) = each
@@ -194,8 +195,8 @@ def PawnMoves(i,j,func,lookingFor=[]):
 	LOOKINGFOR = LOOKINGFOR if func == str.isupper else [each.capitalize() for each in LOOKINGFOR];
 	LOOKINGFOR = LOOKINGFOR if lookingFor == [] else lookingFor;
 	sign = 1 if func == str.islower else -1
-	potentialMove1, enemyOnRDiag = MOVECHECKER(i,j,func,sign*1,1,orig=1,depth = 2,valMoves=[],lookingFor=LOOKINGFOR)
-	potentialMove2, enemyOnLDiag = MOVECHECKER(i,j,func,sign*1,-1,orig=1,depth = 2,valMoves=[],lookingFor=LOOKINGFOR)
+	potentialMove1, enemyOnRDiag = MOVECHECKER(i,j,func,sign*1,1,orig=1,depth = 2,valMoves=[],lookingFor=LOOKINGFOR,piece=piece)
+	potentialMove2, enemyOnLDiag = MOVECHECKER(i,j,func,sign*1,-1,orig=1,depth = 2,valMoves=[],lookingFor=LOOKINGFOR,piece=piece)
 	validMoves = validMoves + potentialMove1 if enemyOnRDiag else validMoves
 	validMoves = validMoves + potentialMove2 if enemyOnLDiag else validMoves
 
@@ -212,8 +213,8 @@ def CheckForEnPassant(i,j,func):
 	EnPassantMoves = []
 
 	lookingFor = [NewFunc('p')]
-	move, enemyOnLeft = MOVECHECKER(i,j,func,0,-1,orig=1,depth=2,valMoves =[],lookingFor=lookingFor)
-	move2, enemyOnRight = MOVECHECKER(i,j,func,0,1,orig=1,depth=2,valMoves=[],lookingFor=lookingFor)
+	move, enemyOnLeft = MOVECHECKER(i,j,func,0,-1,orig=1,depth=2,valMoves =[],lookingFor=lookingFor,piece=piece)
+	move2, enemyOnRight = MOVECHECKER(i,j,func,0,1,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece)
 
 	EnPassantMoves = EnPassantMoves + [(i+1*sign,j-1)] if (enemyOnLeft and PawnHistory[LookUpFunc][j-1] == 2) else EnPassantMoves
 	EnPassantMoves = EnPassantMoves + [(i+1*sign,j+1)] if (enemyOnRight and PawnHistory[LookUpFunc][j+1] == 2) else EnPassantMoves
@@ -227,31 +228,31 @@ def DoTheDeed(i,j,func):				## EN PASSANT BRUTAL KILL.
 	board[i+sign][j] = ''
 
 
-def KingMoves(i,j,func,lookingFor=[]):
-	valMoves = RookeMoves(i,j,func,depth=2,lookingFor=lookingFor)
-	N = BishopMoves(i,j,func,depth=2,lookingFor=lookingFor)
+def KingMoves(i,j,func,lookingFor=[],piece=None):
+	valMoves = RookeMoves(i,j,func,depth=2,lookingFor=lookingFor,piece=piece)
+	N = BishopMoves(i,j,func,depth=2,lookingFor=lookingFor,piece=piece)
 	return list(set(valMoves+N)) if lookingFor == [] else (valMoves or N)
 
 
-def QueenMoves(i,j,func,lookingFor=[]):
+def QueenMoves(i,j,func,lookingFor=[],piece=None):
 	l1 = [lookingFor[0],lookingFor[-1]] if lookingFor != [] else []
 	l2 = lookingFor[:2] if lookingFor != [] else []
 
 
-	valMoves = RookeMoves(i,j,func,lookingFor=l1)
-	N = BishopMoves(i,j,func,lookingFor = l2)
+	valMoves = RookeMoves(i,j,func,lookingFor=l1,piece=piece)
+	N = BishopMoves(i,j,func,lookingFor = l2,piece=piece)
 	return list(set(valMoves+N)) if lookingFor == [] else (valMoves or N)
 
 
-def KnightMoves(i,j,func,lookingFor=[]):
+def KnightMoves(i,j,func,lookingFor=[],piece=None):
 	validMoves = [(i,j)]
 	cur = 0
 	steps = [1,-1]
 	for ind, each in enumerate(steps):
-		M1 = MOVECHECKER(i,j,func,2*each,1,orig=1,depth=2,valMoves= [],lookingFor=lookingFor)
-		M2 = MOVECHECKER(i,j,func,2*each,-1,orig=1,depth=2,valMoves=[],lookingFor=lookingFor)
-		M3 = MOVECHECKER(i,j,func,1,2*each,orig=1,depth=2,valMoves=[],lookingFor=lookingFor)
-		M4 = MOVECHECKER(i,j,func,-1,2*each,orig=1,depth=2,valMoves=[],lookingFor=lookingFor)
+		M1 = MOVECHECKER(i,j,func,2*each,1,orig=1,depth=2,valMoves= [],lookingFor=lookingFor,piece=piece)
+		M2 = MOVECHECKER(i,j,func,2*each,-1,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece)
+		M3 = MOVECHECKER(i,j,func,1,2*each,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece)
+		M4 = MOVECHECKER(i,j,func,-1,2*each,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece)
 		validMoves = [] if (lookingFor != [] and ind <1) else validMoves
 		validMoves =(validMoves+M1 + M2 + M3 + M4) if lookingFor == [] else (validMoves or M1[1] or M2[1] or M3[1] or M4[1])
 	return validMoves;
@@ -274,10 +275,8 @@ def MOVECHECKER(i,j,func,moveI,moveJ,valMoves=[],orig=False,depth=50,lookingFor=
 	if (i >= blocks or j>=blocks or i < 0 or j< 0 or func(board[i][j]) or depth <= 0 or found) and (not orig):
 		return valMoves if lookingFor == [] else (valMoves,found)
 
-	piece = copy.copy(board[i][j]) if (orig and (lookingFor == [] or board[i][j].lower() == 'p')) else piece #UH used lookingFor for pawn, had to use another condition.
-
 	if not orig and piece is not None:
-		origPiece = copy.copy(board[i][j])	
+		origPiece = copy.copy(board[i][j])
 		board[i][j] = piece
 		if piece.lower() =='k':
 			origKingPos = copy.copy(KINGSPOS[func])
@@ -291,9 +290,7 @@ def MOVECHECKER(i,j,func,moveI,moveJ,valMoves=[],orig=False,depth=50,lookingFor=
 		found = True if board[i][j] in lookingFor else found
 		return valMoves if lookingFor == [] else (valMoves,found)
 
-	res= MOVECHECKER(i+moveI,j+moveJ,func,moveI,moveJ,valMoves,depth=depth-1,lookingFor=lookingFor,found=found,piece=piece)
-	board[i][j] = piece if (piece is not None and orig) else board[i][j]
-	return res
+	return MOVECHECKER(i+moveI,j+moveJ,func,moveI,moveJ,valMoves,depth=depth-1,lookingFor=lookingFor,found=found,piece=piece)
 
 
 	
@@ -305,7 +302,6 @@ def KingInCheck(i,j,func):
 	c2 = PawnMoves(i,j,func,lookingFor=pieces[3])
 	c3 = KingMoves(i,j,func,lookingFor=pieces[4])
 	c4 = KnightMoves(i,j,func,lookingFor=pieces[-1])
-
 	return (c1 or c2 or c3 or c4)
 
 
@@ -392,7 +388,7 @@ def LousyCheckMateAlgo(func):
 	for i in range(len(board)):
 		for j in range(len(board[0])):
 			if board[i][j] in piecesToCheck:
-				possibleMoves = MOVEFUNCS[board[i][j].lower()](i,j,func)
+				possibleMoves = MOVEFUNCS[board[i][j].lower()](i,j,func,piece=board[i][j])
 				if len(possibleMoves) > 1:
 					return False
 	return True
