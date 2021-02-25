@@ -44,12 +44,14 @@ def CheckEvent():
 					
 					if board[i][j].lower() == 'k':															### UPDAATE KING's Position
 						KINGSPOS[funcs[not curfunc]] = (i,j) if not (i,j) == lastLegalPos else KINGSPOS[funcs[not curfunc]]
-						
-					ResetPawnHistory()
+					
+					CheckCastlingRights(i,j,funcs[not curfunc],piece);
+					ResetPawnHistory(((i,j) != lastLegalPos))
 					CheckPawnHistory(i,j,curfunc)
 					CheckEnPassantKill(i,j,curfunc)
 
-					EnPassantMoves_ = []
+					if (i,j) != lastLegalPos:
+						EnPassantMoves_ = []
 					lastLegalPos = None
 
 					CheckForPawnPromotion(i,j,funcs[not curfunc]);								
@@ -98,6 +100,25 @@ def CheckForPawnPromotion(i,j,func):
 		PawnPromotion(i,j,func);
 		CheckMate= False;
 
+def CheckCastlingRights(i,j,func,piece):
+	global board, castlingRights, lastLegalPos,castlingMoves_
+	newFunc = str.lower if func == str.islower else str.upper
+	piecesToCheck = ['r','k']
+	if board[i][j].lower() in piecesToCheck and (i,j) != lastLegalPos:
+		word = 'left' if j < 4 else 'right'
+		castlingRights[func][word] = False
+		(castlingRights[func]['left'],castlingRights[func]['right']) = (0,0) if board[i][j].lower() == 'k' else (castlingRights[func]['left'],castlingRights[func]['left']);
+
+	if board[i][j].lower() == 'k' and (i,j) in castlingMoves_:
+		ind = 7 if func == str.isupper else 0
+		if j < 5:
+			board[ind][0] = ''
+			board[ind][j+1] = newFunc('r')
+		else:
+			board[ind][7] = ''
+			board[ind][j-1] = newFunc('r')
+	castlingMoves_ = []
+
 def CheckForCheckMate():
 	global curfunc,funcs,CheckMate,InCheck,MOVEFUNCS
 	if KingInCheck(*KINGSPOS[funcs[curfunc]],funcs[curfunc]):
@@ -112,6 +133,9 @@ def CheckForCheckMate():
 	else:
 		InCheck = None
 
+def UpdateKingsPos(i,j,func):
+	global KINGSPOS
+	KINGSPOS[func] = (i,j)
 
 def PawnPromotion(i,j,func):
 	newFunc = str.lower if func == str.islower else str.upper
@@ -231,7 +255,23 @@ def DoTheDeed(i,j,func):				## EN PASSANT BRUTAL KILL.
 def KingMoves(i,j,func,lookingFor=[],piece=None):
 	valMoves = RookeMoves(i,j,func,depth=2,lookingFor=lookingFor,piece=piece)
 	N = BishopMoves(i,j,func,depth=2,lookingFor=lookingFor,piece=piece)
+	valMoves = valMoves + LookForCastling(i,j,func) if lookingFor == [] else valMoves;
 	return list(set(valMoves+N)) if lookingFor == [] else (valMoves or N)
+
+def LookForCastling(i,j,func):
+	global castlingRights,castlingMoves_,InCheck
+	newFunc = str.lower if func == str.islower else str.upper
+	castlingMoves = []
+	## Can't castle if king is in check
+	if InCheck is None:
+		_, RookeOnLeft = MOVECHECKER(i,j,func,0,-1,orig=1,valMoves=[],lookingFor=[newFunc('r')],depth=50) if castlingRights[func]['left'] else (None,False)
+		_, RookeOnRight = MOVECHECKER(i,j,func,0,1,orig=1,valMoves=[],lookingFor=[newFunc('r')],depth=50) if castlingRights[func]['right'] else (None,False)
+		castlingMoves = castlingMoves + [(i,j-2)] if RookeOnLeft else castlingMoves
+		castlingMoves = castlingMoves + [(i,j+2)] if RookeOnRight else castlingMoves
+		castlingMoves_ += castlingMoves;
+	return castlingMoves;
+
+
 
 
 def QueenMoves(i,j,func,lookingFor=[],piece=None):
@@ -272,7 +312,7 @@ def MOVECHECKER(i,j,func,moveI,moveJ,valMoves=[],orig=False,depth=50,lookingFor=
 	##SO if func(board[i][j]); meaning if the piece which im checking the moves for is white and the board's position which im currently at is white too
 	##Then i want this to terminate obv.
 	global board
-	if (i >= blocks or j>=blocks or i < 0 or j< 0 or func(board[i][j]) or depth <= 0 or found) and (not orig):
+	if (i >= blocks or j>=blocks or i < 0 or j< 0 or (func(board[i][j]) and not board[i][j] in lookingFor) or depth <= 0 or found) and (not orig):
 		return valMoves if lookingFor == [] else (valMoves,found)
 
 	if not orig and piece is not None:
@@ -305,11 +345,12 @@ def KingInCheck(i,j,func):
 	return (c1 or c2 or c3 or c4)
 
 
-def ResetPawnHistory():
+def ResetPawnHistory(condition):
 	global PawnHistory
-	for each in list(PawnHistory.keys()):
-		for j in list(PawnHistory[each].keys()):
-			PawnHistory[each][j] = 0
+	if condition:
+		for each in list(PawnHistory.keys()):
+			for j in list(PawnHistory[each].keys()):
+				PawnHistory[each][j] = 0
 
 def UpdatePawnHistory(lastLegalPos,newPos,func):
 	global PawnHistory
@@ -344,11 +385,13 @@ def loadPicsDict():
 
 
 def drawCurValidMoves(curValidMoves):
+	global EnPassantMoves_,castlingMoves_
 	for each in curValidMoves:
 		x,y = blockW*each[1],blockH*each[0]
 		r = Rect(x,y,blockW,blockH)
-		#c = (0, 0, 51)
-		pygame.draw.rect(screen,(51,51,81),r)
+		c = (51,51,81) if not each in EnPassantMoves_ else (155,21,21)
+		c = c if not each in castlingMoves_ else (81,51,81)
+		pygame.draw.rect(screen,c,r)
 		pygame.draw.rect(screen,(0,0,51),r,5)
 
 
@@ -403,6 +446,8 @@ lastLegalPos = None
 MOVEFUNCS = {'r':RookeMoves,'b':BishopMoves,'k':KingMoves,'n':KnightMoves,'p':PawnMoves,'q':QueenMoves}
 funcs = {0:str.islower,1:str.isupper}
 KINGSPOS = {str.islower:(0,4),str.isupper:(7,4)}                  ## CHANGE KINGS' POSITIONS FOR DEFAULT STARTING FEN; or write a function that does that for you.
+castlingRights = {each:{'left':True,'right':True} for each in list(players.keys())}
+castlingMoves_ = []
 InCheck = None
 curfunc = 1
 PawnHistory = {str.islower:{i:0 for i in range(8)},
