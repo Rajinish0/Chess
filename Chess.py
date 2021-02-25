@@ -1,3 +1,4 @@
+  
 import pygame,random,math,time,copy,os
 from pygame.locals import *
 run = True
@@ -54,7 +55,7 @@ def CheckEvent():
 						EnPassantMoves_ = []
 					lastLegalPos = None
 
-					CheckForPawnPromotion(i,j,funcs[not curfunc]);								
+					CheckForPawnPromotion(i,j,funcs[not curfunc]);
 					CheckForCheckMate();
 
 
@@ -127,6 +128,7 @@ def CheckForCheckMate():
 		kingsMoves = MOVEFUNCS['k'](*KINGSPOS[funcs[curfunc]],funcs[curfunc],piece=newFunc('k'))
 		if len(kingsMoves) < 2:
 			print('POTENTIAL CHECKMATE')
+			print(funcs[curfunc],KINGSPOS[funcs[curfunc]])
 			CheckMate = LousyCheckMateAlgo(funcs[curfunc]);
 			winner = players[funcs[not curfunc]] if CheckMate else None;						
 			print(winner);
@@ -269,10 +271,25 @@ def LookForCastling(i,j,func):
 		castlingMoves = castlingMoves + [(i,j-2)] if RookeOnLeft else castlingMoves
 		castlingMoves = castlingMoves + [(i,j+2)] if RookeOnRight else castlingMoves
 		castlingMoves_ += castlingMoves;
+		castlingMoves = FilterCastlingMoves(i,j,castlingMoves,newFunc('k'),func)
 	return castlingMoves;
 
 
-
+def FilterCastlingMoves(i,j,castlingMoves,piece,func):
+	new = copy.copy(castlingMoves)
+	for each in castlingMoves:
+		origPiece = copy.copy(board[i][j])
+		board[i][j] = ''
+		x,y = each 
+		board[x][y] = piece
+		origKingPos = copy.copy(KINGSPOS[func])
+		KINGSPOS[func] = (x,y)
+		if KingInCheck(*KINGSPOS[func], func):
+			new.remove(each)
+		board[i][j] = origPiece
+		board[x][y] = ''
+		KINGSPOS[func] = origKingPos;
+	return new;
 
 def QueenMoves(i,j,func,lookingFor=[],piece=None):
 	l1 = [lookingFor[0],lookingFor[-1]] if lookingFor != [] else []
