@@ -46,11 +46,11 @@ def CheckEvent():
 						KINGSPOS[funcs[not curfunc]] = (i,j) if not (i,j) == lastLegalPos else KINGSPOS[funcs[not curfunc]]
 					
 					CheckCastlingRights(i,j,funcs[not curfunc],piece);
-					ResetPawnHistory(((i,j) != lastLegalPos))
+					ResetPawnHistory(((board[i][j].lower() == 'p' and ((i,j) != lastLegalPos))))
 					CheckPawnHistory(i,j,curfunc)
 					CheckEnPassantKill(i,j,curfunc)
 
-					if (i,j) != lastLegalPos:
+					if board[i][j].lower() == 'p' and ((i,j) != lastLegalPos):
 						EnPassantMoves_ = []
 					lastLegalPos = None
 
