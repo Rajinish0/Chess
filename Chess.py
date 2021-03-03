@@ -51,7 +51,7 @@ def CheckEvent():
 					CheckPawnHistory(i,j,curfunc)
 					CheckEnPassantKill(i,j,curfunc)
 
-					if board[i][j].lower() == 'p' and ((i,j) != lastLegalPos):
+					if board[i][j].lower() != '' and ((i,j) != lastLegalPos):
 						EnPassantMoves_ = []
 					lastLegalPos = None
 
