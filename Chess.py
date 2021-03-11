@@ -33,6 +33,7 @@ def CheckEvent():
 				back = False
 				if pieceinHand:
 					if (i,j) in curValidMoves:
+						piecesAvailable[board[i][j]] -= 1
 						board[i][j] = piece
 					else:
 						origI,origJ = lastLegalPos
@@ -42,21 +43,8 @@ def CheckEvent():
 					piece = None
 					curValidMoves = None
 					curfunc = not curfunc if (lastLegalPos != (i,j)) else curfunc
+					AfterMath(i,j,curfunc);
 					
-					if board[i][j].lower() == 'k':															### UPDAATE KING's Position
-						KINGSPOS[funcs[not curfunc]] = (i,j) if not (i,j) == lastLegalPos else KINGSPOS[funcs[not curfunc]]
-					
-					CheckCastlingRights(i,j,funcs[not curfunc],piece);
-					ResetPawnHistory(((board[i][j].lower() == 'p' and ((i,j) != lastLegalPos))))
-					CheckPawnHistory(i,j,curfunc)
-					CheckEnPassantKill(i,j,curfunc)
-
-					if board[i][j].lower() != '' and ((i,j) != lastLegalPos):
-						EnPassantMoves_ = []
-					lastLegalPos = None
-
-					CheckForPawnPromotion(i,j,funcs[not curfunc]);
-					CheckForCheckMate();
 
 
 
@@ -68,6 +56,24 @@ def GetBlockFromMouse():
 	j,i= posx//blockW,posy//blockH
 	return j,i
 
+
+def AfterMath(i,j,curfunc):
+	global run,pieceinHand,piece,curValidMoves,lastLegalPos,funcs,KINGSPOS,InCheck,CheckMate,EnPassantMoves_,piecesAvailable
+
+	if board[i][j].lower() == 'k':															### UPDAATE KING's Position
+		KINGSPOS[funcs[not curfunc]] = (i,j) if not (i,j) == lastLegalPos else KINGSPOS[funcs[not curfunc]]
+
+	CheckCastlingRights(i,j,funcs[not curfunc]);
+	ResetPawnHistory(((board[i][j].lower() == 'p' and ((i,j) != lastLegalPos))))
+	CheckPawnHistory(i,j,curfunc)
+	CheckEnPassantKill(i,j,curfunc)
+
+	if board[i][j].lower() != '' and ((i,j) != lastLegalPos):
+		EnPassantMoves_ = []
+	lastLegalPos = None
+
+	CheckForPawnPromotion(i,j,funcs[not curfunc]);
+	CheckForCheckMate(curfunc);	
 
 '''
 So if a pawn is at starting position and it moves 2 steps, i record that pawn in a dictionary
@@ -101,7 +107,7 @@ def CheckForPawnPromotion(i,j,func):
 		PawnPromotion(i,j,func);
 		CheckMate= False;
 
-def CheckCastlingRights(i,j,func,piece):
+def CheckCastlingRights(i,j,func):
 	global board, castlingRights, lastLegalPos,castlingMoves_
 	newFunc = str.lower if func == str.islower else str.upper
 	piecesToCheck = ['r','k']
@@ -120,8 +126,8 @@ def CheckCastlingRights(i,j,func,piece):
 			board[ind][j-1] = newFunc('r')
 	castlingMoves_ = []
 
-def CheckForCheckMate():
-	global curfunc,funcs,CheckMate,InCheck,MOVEFUNCS
+def CheckForCheckMate(curfunc):
+	global funcs,CheckMate,InCheck,MOVEFUNCS
 	if KingInCheck(*KINGSPOS[funcs[curfunc]],funcs[curfunc]):
 		InCheck = KINGSPOS[funcs[curfunc]]
 		newFunc = str.lower if funcs[curfunc] == str.islower else str.upper
@@ -132,8 +138,10 @@ def CheckForCheckMate():
 			CheckMate = LousyCheckMateAlgo(funcs[curfunc]);
 			winner = players[funcs[not curfunc]] if CheckMate else None;						
 			print(winner);
+			return True
 	else:
 		InCheck = None
+	return False
 
 def UpdateKingsPos(i,j,func):
 	global KINGSPOS
@@ -144,6 +152,8 @@ def PawnPromotion(i,j,func):
 
 	while True:
 		keys = pygame.key.get_pressed()
+		board[i][j] = newFunc('q')
+		return
 		if keys[pygame.K_q]:
 			board[i][j] = newFunc('q')
 			break
@@ -183,48 +193,53 @@ def drawRects():
 		curColor = not curColor	
 	return board
 
-def RookeMoves(i,j,func,depth=50,lookingFor = [],piece=None):
+def RookeMoves(i,j,func,depth=50,lookingFor = [],piece=None,isMaximizing=True,d= None,returnBestMove=False,origPos=None,curfunc=None):
 	global board,blocks
 	validMoves = [(i,j)]
-	U = MOVECHECKER(i,j,func,1,0,orig=1,depth=depth,valMoves=[],lookingFor=lookingFor,piece=piece)
-	D = MOVECHECKER(i,j,func,-1,0,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
-	R = MOVECHECKER(i,j,func,0,1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
-	L = MOVECHECKER(i,j,func,0,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
+	U = MOVECHECKER(i,j,func,1,0,orig=1,depth=depth,valMoves=[],lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	D = MOVECHECKER(i,j,func,-1,0,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	R = MOVECHECKER(i,j,func,0,1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	L = MOVECHECKER(i,j,func,0,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	if returnBestMove:
+		return L;
 	validMoves = validMoves + U+D+R+L if lookingFor == [] else (U[1] or D[1] or R[1] or L[1])
 	return validMoves
 
-def BishopMoves(i,j,func,depth=50,lookingFor=[],piece=None):
+def BishopMoves(i,j,func,depth=50,lookingFor=[],piece=None,isMaximizing=True,d= None,returnBestMove=False,origPos=None,curfunc=None):
 	global board,blocks
 	validMoves= [(i,j)]
-	U = MOVECHECKER(i,j,func,1,1,orig=1,depth=depth,valMoves=[],lookingFor=lookingFor,piece=piece)
-	D = MOVECHECKER(i,j,func,-1,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
-	UR = MOVECHECKER(i,j,func,1,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
-	DR = MOVECHECKER(i,j,func,-1,1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece)
+	U = MOVECHECKER(i,j,func,1,1,orig=1,depth=depth,valMoves=[],lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	D = MOVECHECKER(i,j,func,-1,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	UR = MOVECHECKER(i,j,func,1,-1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	DR = MOVECHECKER(i,j,func,-1,1,orig=1,valMoves=[],depth=depth,lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	if returnBestMove:
+		return DR
 	validMoves = validMoves + U+D+UR+DR if lookingFor ==[] else (U[1] or D[1] or UR[1] or DR[1])
 	return validMoves
 
-def PawnMoves(i,j,func,lookingFor=[],piece=None):
+def PawnMoves(i,j,func,lookingFor=[],piece=None,isMaximizing=True,d= None,returnBestMove=False,origPos=None,curfunc=None):
 	validMoves = [(i,j)]
 	depth = 3 if (i == 1 or i == 6) else 2
 	LOOKINGFOR = ['q','p','r','k','n','b']
 	if func == str.islower:
-		MOVE = MOVECHECKER(i,j,func,1,0,orig=1,depth = depth,valMoves=[],lookingFor=[],piece=piece)
+		MOVE = MOVECHECKER(i,j,func,1,0,orig=1,depth = depth,valMoves=[],lookingFor=[],piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
 	else:
-		MOVE = MOVECHECKER(i,j,func,-1,0,orig=1,depth = depth,valMoves=[],lookingFor=[],piece=piece)
-
-	for ind, each in enumerate(MOVE):
-		(vali,valj) = each
-		if board[vali][valj] != '':
-			del MOVE[ind];
+		MOVE = MOVECHECKER(i,j,func,-1,0,orig=1,depth = depth,valMoves=[],lookingFor=[],piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
 
 
 	LOOKINGFOR = LOOKINGFOR if func == str.isupper else [each.capitalize() for each in LOOKINGFOR];
 	LOOKINGFOR = LOOKINGFOR if lookingFor == [] else lookingFor;
 	sign = 1 if func == str.islower else -1
-	potentialMove1, enemyOnRDiag = MOVECHECKER(i,j,func,sign*1,1,orig=1,depth = 2,valMoves=[],lookingFor=LOOKINGFOR,piece=piece)
-	potentialMove2, enemyOnLDiag = MOVECHECKER(i,j,func,sign*1,-1,orig=1,depth = 2,valMoves=[],lookingFor=LOOKINGFOR,piece=piece)
+	potentialMove1, enemyOnRDiag = MOVECHECKER(i,j,func,sign*1,1,orig=1,depth = 2,valMoves=[],lookingFor=LOOKINGFOR,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos)
+	potentialMove2, enemyOnLDiag = MOVECHECKER(i,j,func,sign*1,-1,orig=1,depth = 2,valMoves=[],lookingFor=LOOKINGFOR,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos)
+	if returnBestMove:
+		return (potentialMove2, enemyOnLDiag)
 	validMoves = validMoves + potentialMove1 if enemyOnRDiag else validMoves
 	validMoves = validMoves + potentialMove2 if enemyOnLDiag else validMoves
+
+#	if returnBestMove:
+#		for each in [potentialMove1,potentialMove2]:
+	## MOVE THERE AND CALL GETALLPOSSIBLEMOVES WITH d-1
 
 	validMoves = validMoves + CheckForEnPassant(i,j,func) if lookingFor == [] else validMoves;
 
@@ -254,9 +269,11 @@ def DoTheDeed(i,j,func):				## EN PASSANT BRUTAL KILL.
 	board[i+sign][j] = ''
 
 
-def KingMoves(i,j,func,lookingFor=[],piece=None):
-	valMoves = RookeMoves(i,j,func,depth=2,lookingFor=lookingFor,piece=piece)
-	N = BishopMoves(i,j,func,depth=2,lookingFor=lookingFor,piece=piece)
+def KingMoves(i,j,func,lookingFor=[],piece=None,isMaximizing=True,d= None,returnBestMove=False,origPos=None,curfunc=None):
+	valMoves = RookeMoves(i,j,func,depth=2,lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	N = BishopMoves(i,j,func,depth=2,lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	if returnBestMove:
+		return N;
 	valMoves = valMoves + LookForCastling(i,j,func) if lookingFor == [] else valMoves;
 	return list(set(valMoves+N)) if lookingFor == [] else (valMoves or N)
 
@@ -270,48 +287,50 @@ def LookForCastling(i,j,func):
 		_, RookeOnRight = MOVECHECKER(i,j,func,0,1,orig=1,valMoves=[],lookingFor=[newFunc('r')],depth=50) if castlingRights[func]['right'] else (None,False)
 		castlingMoves = castlingMoves + [(i,j-2)] if RookeOnLeft else castlingMoves
 		castlingMoves = castlingMoves + [(i,j+2)] if RookeOnRight else castlingMoves
-		castlingMoves_ += castlingMoves;
 		castlingMoves = FilterCastlingMoves(i,j,castlingMoves,newFunc('k'),func)
+		castlingMoves_ += castlingMoves;
+
 	return castlingMoves;
 
 
 def FilterCastlingMoves(i,j,castlingMoves,piece,func):
 	new = copy.copy(castlingMoves)
-	for each in castlingMoves:
-		origPiece = copy.copy(board[i][j])
-		board[i][j] = ''
+	for each in castlingMoves:		
 		x,y = each 
 		board[x][y] = piece
 		origKingPos = copy.copy(KINGSPOS[func])
 		KINGSPOS[func] = (x,y)
 		if KingInCheck(*KINGSPOS[func], func):
 			new.remove(each)
-		board[i][j] = origPiece
 		board[x][y] = ''
 		KINGSPOS[func] = origKingPos;
 	return new;
 
-def QueenMoves(i,j,func,lookingFor=[],piece=None):
+def QueenMoves(i,j,func,lookingFor=[],piece=None,isMaximizing=True,d= None,returnBestMove=False,origPos=None,curfunc=None):
 	l1 = [lookingFor[0],lookingFor[-1]] if lookingFor != [] else []
 	l2 = lookingFor[:2] if lookingFor != [] else []
 
 
-	valMoves = RookeMoves(i,j,func,lookingFor=l1,piece=piece)
-	N = BishopMoves(i,j,func,lookingFor = l2,piece=piece)
+	valMoves = RookeMoves(i,j,func,lookingFor=l1,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	N = BishopMoves(i,j,func,lookingFor = l2,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+	if returnBestMove:
+		return N
 	return list(set(valMoves+N)) if lookingFor == [] else (valMoves or N)
 
 
-def KnightMoves(i,j,func,lookingFor=[],piece=None):
+def KnightMoves(i,j,func,lookingFor=[],piece=None,isMaximizing=True,d= None,returnBestMove=False,origPos=None,curfunc=None):
 	validMoves = [(i,j)]
 	cur = 0
 	steps = [1,-1]
 	for ind, each in enumerate(steps):
-		M1 = MOVECHECKER(i,j,func,2*each,1,orig=1,depth=2,valMoves= [],lookingFor=lookingFor,piece=piece)
-		M2 = MOVECHECKER(i,j,func,2*each,-1,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece)
-		M3 = MOVECHECKER(i,j,func,1,2*each,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece)
-		M4 = MOVECHECKER(i,j,func,-1,2*each,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece)
+		M1 = MOVECHECKER(i,j,func,2*each,1,orig=1,depth=2,valMoves= [],lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+		M2 = MOVECHECKER(i,j,func,2*each,-1,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+		M3 = MOVECHECKER(i,j,func,1,2*each,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
+		M4 = MOVECHECKER(i,j,func,-1,2*each,orig=1,depth=2,valMoves=[],lookingFor=lookingFor,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
 		validMoves = [] if (lookingFor != [] and ind <1) else validMoves
-		validMoves =(validMoves+M1 + M2 + M3 + M4) if lookingFor == [] else (validMoves or M1[1] or M2[1] or M3[1] or M4[1])
+		validMoves =(validMoves+M1 + M2 + M3 + M4) if (lookingFor == [] and not returnBestMove) else (validMoves or M1[1] or M2[1] or M3[1] or M4[1])
+	if returnBestMove:
+		return M4
 	return validMoves;
 
 
@@ -324,30 +343,79 @@ Moves recursively in that moveI, moveJ until the conditions above are satisfied
 Also works as a look up function; which I used for KingInCheck, really couldn't go through
 the trouble of writing another function for that. Takes care of not adding a position if that would
 make the king in check.'''
-def MOVECHECKER(i,j,func,moveI,moveJ,valMoves=[],orig=False,depth=50,lookingFor=[],found=False,piece=None):
+
+
+''' 
+Alright so tried creating a chess AI, went at it with 2 approaches: 1. getting all the moves and then moving to each of them and then getting opponent's moves and
+moving to those, yk the casual recursive minmax algo. 2. That was a slow, so since MOVECHECKER moves the piece to check the vacant spot
+I used this as a function for returning best move; so first, say, a white pawn's move is checked (it's called from GetAllPossibleMoves),
+movechecker moves it to that position and then calls
+GetAllPossibleMoves again, which then call MOVECHECKER again and checks all moves of black, depth is decreased by 1 everytime 
+GetAllPossibleMoves is called from MOVECHECKER, for the static evaluation. UH, this is still slow.. and this doesn't take into account the special moves:
+En passant, castling, pawn promotion unlike the previous approach; gotta figure that out.
+'''
+def MOVECHECKER(i,j,func,moveI,moveJ,valMoves=[],orig=False,depth=50,lookingFor=[],found=False,piece=None,isMaximizing=True,d= None,returnBestMove=False,origPos=None,curfunc=None):
 	##FUNC btw can be str.isupper, which would be white, or str.islower for black (just built up from fenstrings.)
 	##SO if func(board[i][j]); meaning if the piece which im checking the moves for is white and the board's position which im currently at is white too
 	##Then i want this to terminate obv.
-	global board
+	global board, lastLegalPos, maximScore, minimScore, bestMove,alpha,beta,MAXDEPTH, piecesAvailable
 	if (i >= blocks or j>=blocks or i < 0 or j< 0 or (func(board[i][j]) and not board[i][j] in lookingFor) or depth <= 0 or found) and (not orig):
+		if returnBestMove:
+			return ([origPos,bestMove],maximScore) if isMaximizing else (None, minimScore)
 		return valMoves if lookingFor == [] else (valMoves,found)
+	if not orig and piece is not None and not (lookingFor == [] and piece.lower() == 'p' and board[i][j] != ''):
+		if lookingFor == [] or (lookingFor != [] and board[i][j] in lookingFor):
+			config = SaveOrigConfig()
+			origPiece = copy.copy(board[i][j])
+			board[i][j] = piece
+			if piece.lower() =='k':
+				origKingPos = copy.deepcopy(KINGSPOS[func])
+				KINGSPOS[func] = (i,j)	
 
-	if not orig and piece is not None:
-		origPiece = copy.copy(board[i][j])
-		board[i][j] = piece
-		if piece.lower() =='k':
-			origKingPos = copy.copy(KINGSPOS[func])
-			KINGSPOS[func] = (i,j)	
-		if not KingInCheck(*KINGSPOS[func],func):
-			valMoves.append((i,j))
-		board[i][j] = origPiece;
-		KINGSPOS[func] = origKingPos if piece.lower() == 'k' else KINGSPOS[func];
+			if not KingInCheck(*KINGSPOS[func],func):
+				valMoves.append((i,j))
+
+				if returnBestMove:
+					piecesAvailable[origPiece] -= 1
+					lastLegalPos = origPos
+					AfterMath(i,j,not curfunc)
+					maxScore = copy.copy(maximScore)
+					minScore = copy.copy(minimScore)
+					alpha_,beta_ = copy.copy(alpha),copy.copy(beta)
+					_, score = GetAllPossibleMoves(not curfunc,d-1, not isMaximizing);
+					maximScore, minimScore = maxScore,minScore
+					alpha,beta = alpha_,beta_
+
+					board[i][j] = origPiece;
+					piecesAvailable[origPiece] += 1
+					KINGSPOS[func] = origKingPos if piece.lower() == 'k' else KINGSPOS[func];
+					LoadConfig(config)
+
+
+					if isMaximizing:
+						if score >= maximScore:
+							bestMove = [origPos, (i,j)] if d == MAXDEPTH else bestMove
+							maximScore = score;
+						alpha = max(alpha,score)
+						if alpha >= beta:
+							return (bestMove, maximScore)
+					else:
+						minimScore = min(minimScore, score)
+						beta = min(alpha,score)
+						if alpha >= beta:
+							return (bestMove,minimScore)
+
+			board[i][j] = origPiece;
+			KINGSPOS[func] = origKingPos if piece.lower() == 'k' else KINGSPOS[func];
+			LoadConfig(config)
 
 	if board[i][j] != '' and not orig:
 		found = True if board[i][j] in lookingFor else found
+		if returnBestMove:
+			return ([origPos,bestMove],maximScore) if isMaximizing else (None, minimScore)
 		return valMoves if lookingFor == [] else (valMoves,found)
 
-	return MOVECHECKER(i+moveI,j+moveJ,func,moveI,moveJ,valMoves,depth=depth-1,lookingFor=lookingFor,found=found,piece=piece)
+	return MOVECHECKER(i+moveI,j+moveJ,func,moveI,moveJ,valMoves,depth=depth-1,lookingFor=lookingFor,found=found,piece=piece,isMaximizing=isMaximizing,d= d,returnBestMove=returnBestMove,origPos=origPos,curfunc=curfunc)
 
 
 	
@@ -454,10 +522,126 @@ def LousyCheckMateAlgo(func):
 	return True
 
 
+def GetAllPossibleMoves(curfunc,depth=2,isMaximizing=True):
+	global funcs, lastLegalPos,KINGSPOS,board,bestMove,maximScore,minimScore,alpha,beta, InCheck, CheckMate
+	if not CheckMate:
+		if depth <= 0:
+			return (None, StaticEvaluation(board,False,curfunc))
+
+		maximScore = float('-inf')
+		minimScore = float('inf')
+		for i in range(len(board)):
+			for j in range(len(board[0])):
+				if funcs[curfunc](board[i][j]):
+					origPiece = copy.copy(board[i][j])
+					board[i][j] = ''
+					MOVEFUNCS[origPiece.lower()](i,j,funcs[curfunc],piece=origPiece,isMaximizing=isMaximizing,d= depth,returnBestMove=True,origPos=(i,j),curfunc=curfunc)
+					board[i][j] = origPiece
+		return (bestMove, maximScore) if isMaximizing else (None,minimScore)
+	else:
+		CheckMate = False
+		InCheck = None
+		return (None,StaticEvaluation(board,CheckMate,curfunc))
+
+def HandleAITurn():
+	global curfunc,board,lastLegalPos,KINGSPOS,bestMove,maximScore,minimScore,MAXDEPTH
+	depth = MAXDEPTH
+	if curfunc == 0 and not CheckMate:
+		bestMove = None
+		alpha, beta = float('-inf'),float('inf')
+		bMove, _ = GetAllPossibleMoves(curfunc,depth=depth)
+		print(bMove,'BEST MOVE')
+		try:
+			lastLegalPos = bMove[0]
+			MakeMove(*bMove,funcs[curfunc]);
+			curfunc = not curfunc;
+			AfterMath(*bMove[1],curfunc)
+		except:
+			print("NO MOVE")
+
+
+
+def GetPieceCountScore():
+	global pieceScore, piecesAvailable,pieceCount
+
+	score = 0
+	for each in list(pieceScore.keys()):
+		try:
+			score += (pieceCount[each.upper()]-piecesAvailable[each])*pieceScore[each]
+		except:
+			score += (pieceCount[each.upper()]*pieceScore[each]);
+	return score
+
+
+def StaticEvaluation(board,isInCheckMate,curfunc):
+	## CUR FUNC 0 is BLACK
+	global CheckMate,InCheck
+	CheckMateScores = {0:-100,1:100}
+	s = 0
+	# if KingInCheck(*KINGSPOS[funcs[curfunc]], funcs[curfunc]):
+	# 	s += CheckMateScores[curfunc]//3
+	if isInCheckMate:
+		CheckMate = False
+		InCheck = None
+		return CheckMateScores[curfunc]
+
+	return GetPieceCountScore() + s
+
+def MakeMove(pos, move,func):
+	global piecesAvailable
+	i,j = pos
+	piece = copy.copy(board[i][j])
+	board[i][j] = ''
+	newI, newJ = move
+	oldPiece=  copy.copy(board[newI][newJ])
+	piecesAvailable[oldPiece] -=1
+	board[newI][newJ] = piece;
+	if piece.lower() == 'k':
+		#print(newI,newJ,func)
+		KINGSPOS[func] = (newI,newJ);
+	#print(f'MOVED {piece,(i,j)} to {(newI,newJ)}')
+	#DrawCheck((i,j),(255,255,255))
+	#DrawCheck((i,j),(255,255,0))
+	return oldPiece
+
+def SaveOrigConfig():
+	global PawnHistory, castlingRights,EnPassantMoves_
+	config = {}
+	config['pawnHistory'] = copy.deepcopy(PawnHistory)
+	config['castlingRights'] = copy.deepcopy(castlingRights)
+	config['EnPassantMoves_'] = copy.deepcopy(EnPassantMoves_)
+	return config
+
+def LoadConfig(config):
+	global PawnHistory, castlingRights,EnPassantMoves_
+	PawnHistory = config['pawnHistory']
+	castlingRights = config['castlingRights']
+	EnPassantMoves_= config['EnPassantMoves_'] 
+
+
+def GetPieceStuff():
+	p = {'P':1,"Q":50,"R":20,"N":10,"K":100,'B':10}
+	pieceCount = {'P':8,"Q":1,"R":2,"N":2,"K":1,'B':2,'':20}
+	for each in list(p.keys()):
+		p[each.lower()] = p[each]*-1
+		pieceCount[each.lower()] = pieceCount[each]
+	return p, copy.copy(pieceCount),pieceCount
+
+def GetKingsPos():
+	global board,KINGSPOS
+	for i in range(len(board)):
+		for j in range(len(board[0])):
+			if board[i][j].lower() == 'k':
+				if str.islower(board[i][j]):
+					KINGSPOS[str.islower] = (i,j)
+				else:
+					KINGSPOS[str.isupper] = (i,j)
+
 pieceinHand = 0
 piece = None
 curValidMoves = None
 CheckMate = False
+bestMove = None
 players = {str.islower:'Black',str.isupper:'White'}
 lastLegalPos = None
 MOVEFUNCS = {'r':RookeMoves,'b':BishopMoves,'k':KingMoves,'n':KnightMoves,'p':PawnMoves,'q':QueenMoves}
@@ -465,16 +649,24 @@ funcs = {0:str.islower,1:str.isupper}
 KINGSPOS = {str.islower:(0,4),str.isupper:(7,4)}                  ## CHANGE KINGS' POSITIONS FOR DEFAULT STARTING FEN; or write a function that does that for you.
 castlingRights = {each:{'left':True,'right':True} for each in list(players.keys())}
 castlingMoves_ = []
+alpha = float('-inf')
+beta = float('inf')
+maximScore = float('-inf')
+minimScore = float('inf')
+pieceScore,piecesAvailable,pieceCount = GetPieceStuff()
+MAXDEPTH = 2
 InCheck = None
 curfunc = 1
 PawnHistory = {str.islower:{i:0 for i in range(8)},
-			   str.isupper:{i:0 for i in range(8)},}			##FOR MEASURING CHANGE IN POSITION
+			   str.isupper:{i:0 for i in range(8)}}			##FOR MEASURING CHANGE IN POSITION
 fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'
+# fen = 'rnbqkbnr/pp1p2p1/2p2p2/7p/1QPP1P2/5K1N/PP2P1Pp/RNB2B2'
 EnPassantMoves_ = []
-#fen = '4k3/1R6/2QQ5/8/8/8/8/4K3'
+# fen = '4k3/8/2QQ5/8/8/8/8/4K3'
 imgs= loadPicsDict()
 board = GetBoard()
 parseFen(board,fen)
+GetKingsPos()
 
 while run:
 	screen.fill((0,0,0))
@@ -487,5 +679,7 @@ while run:
 		drawPieces(board,imgs)
 	keys,run,piece = CheckEvent()
 	if InCheck is not None:
-		DrawCheck(InCheck);
+		DrawCheck(InCheck)
+	HandleAITurn()
+	pieceCount = copy.copy(piecesAvailable)
 	pygame.display.update()
